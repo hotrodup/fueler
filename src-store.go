@@ -1,14 +1,13 @@
 package main
 
 import (
-    "fmt"
     "net/http"
     "os"
     "io"
     fp "path/filepath"
 )
 
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
+func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
   // after 200000 bytes of file parts stored in memory
   // the remainder are persisted to disk in temporary files
   err := r.ParseMultipartForm(200000)
@@ -17,59 +16,78 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  // get all the *fileheaders uploaded to the input field
-  // named "src"
   formData := r.MultipartForm
-  files := formData.File["src"]
+  relPath := formData.Value["path"][0]
 
-  // loop through files
-  for i, _ := range files {
-    file, err := files[i].Open()
-    defer file.Close()
-    if err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-      return
+  baseDir := os.Getenv("APP_SRC_DIR")
+  if len(baseDir) == 0 {
+    baseDir = "/app/"
+  }
+
+  filepath := fp.Join(baseDir, relPath)
+
+  if add {
+
+    dir := filepath
+    if isFile {
+      dir = fp.Dir(filepath)
     }
 
-    filename := files[i].Filename
-    path := r.URL.Path[1:]
-    baseDir := os.Getenv("APP_SRC_DIR")
-    if len(baseDir) == 0 {
-      baseDir = "/app/"
-    }
-    fullPath := fp.Join(baseDir, path, filename)
-
-    err = os.MkdirAll(fp.Join(baseDir, path), 0777)
+    err = os.MkdirAll(dir, 0777)
     if err != nil {
       http.Error(w, "Unable to create the folder for writing. Check your write access privilege", http.StatusInternalServerError)
       return
     }
 
-    dest, err := os.Create(fullPath)
-    defer dest.Close()
-    if err != nil {
-      http.Error(w, "Unable to create the file for writing. Check your write access privilege", http.StatusInternalServerError)
-      return
+    if isFile {
+      file := formData.File["file"][0]
+
+      f, err := file.Open()
+      defer f.Close()
+      if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+      }
+
+      dest, err := os.Create(filepath)
+      defer dest.Close()
+      if err != nil {
+        http.Error(w, "Unable to create the file for writing. Check your write access privilege", http.StatusInternalServerError)
+        return
+      }
+
+      _, err = io.Copy(dest, f)
+      if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+      }
     }
 
-    _, err = io.Copy(dest, file)
+  } else {
 
+    err = os.RemoveAll(filepath)
     if err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
+      http.Error(w, "Unable to delete the file/folder. Check your write access privilege", http.StatusInternalServerError)
       return
     }
-
-    fmt.Fprintf(w,"Files uploaded successfully : ")
-    fmt.Fprintf(w, "%s\n", fullPath)
-
   }
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+func addFileHandler(w http.ResponseWriter, r *http.Request) {
+  handler(w, r, true, true)
+}
+
+func addFolderHandler(w http.ResponseWriter, r *http.Request) {
+  handler(w, r, true, false)
+}
+
+func removeHandler(w http.ResponseWriter, r *http.Request) {
+  handler(w, r, false, false)
 }
 
 func main() {
-    http.HandleFunc("/", uploadHandler)
+    http.HandleFunc("/addFile", addFileHandler)
+    http.HandleFunc("/addFolder", addFolderHandler)
+    http.HandleFunc("/remove", removeHandler)
     http.ListenAndServe(":8888", nil)
 }
