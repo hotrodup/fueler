@@ -4,6 +4,8 @@ import (
     "net/http"
     "os"
     "io"
+    "time"
+    "io/ioutil"
     fp "path/filepath"
 )
 
@@ -71,6 +73,9 @@ func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
       return
     }
   }
+
+  os.Chtimes(fp.Join(baseDir, ".hotrod-update"), time.Now(), time.Now())
+
 }
 
 func addFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +91,14 @@ func removeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+    baseDir := os.Getenv("APP_SRC_DIR")
+    if len(baseDir) == 0 {
+      baseDir = "/app/"
+    }
+
+    ioutil.WriteFile(fp.Join(baseDir, ".hotrod-update"), []byte(""), 0777)
+
     http.HandleFunc("/addFile", addFileHandler)
     http.HandleFunc("/addFolder", addFolderHandler)
     http.HandleFunc("/remove", removeHandler)
