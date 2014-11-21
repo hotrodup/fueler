@@ -78,6 +78,10 @@ func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
 
 }
 
+func addBaseHandler(w http.ResponseWriter, r *http.Request) {
+  fmt.Fprintf(w, "Hello, server running.")
+}
+
 func addFileHandler(w http.ResponseWriter, r *http.Request) {
   handler(w, r, true, true)
 }
@@ -99,6 +103,7 @@ func main() {
 
     ioutil.WriteFile(fp.Join(baseDir, ".hotrod-update"), []byte(""), 0777)
 
+    http.HandleFunc("/", addBaseHandler)
     http.HandleFunc("/addFile", addFileHandler)
     http.HandleFunc("/addFolder", addFolderHandler)
     http.HandleFunc("/remove", removeHandler)
