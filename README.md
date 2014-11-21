@@ -1,3 +1,3 @@
 # Fueler
 
-Server to receive file uploads and inject them into the main server.
+Server to receive source file uploads and inject them into the main Node.js app
