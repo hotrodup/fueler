@@ -15,10 +15,6 @@ const (
   BASE_DIR = "/app/"
 )
 
-var addFile = 0
-var remove = 0
-var addFolder = 0
-
 func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
   // after 200000 bytes of file parts stored in memory
   // the remainder are persisted to disk in temporary files
@@ -83,21 +79,18 @@ func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
 }
 
 func addBaseHandler(w http.ResponseWriter, r *http.Request) {
-  fmt.Fprintf(w, "Hello, server running. Added files: %s, added folders: %s, removed: %s.", addFile, addFolder, remove)
+  fmt.Fprintf(w, "Hello, server running.")
 }
 
 func addFileHandler(w http.ResponseWriter, r *http.Request) {
-  addFile += 1
   handler(w, r, true, true)
 }
 
 func addFolderHandler(w http.ResponseWriter, r *http.Request) {
-  addFolder += 1
   handler(w, r, true, false)
 }
 
 func removeHandler(w http.ResponseWriter, r *http.Request) {
-  remove += 1
   handler(w, r, false, false)
 }
 
