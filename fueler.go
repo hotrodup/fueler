@@ -78,7 +78,7 @@ func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
   os.Chtimes(fp.Join(BASE_DIR, UPDATE_FILE), time.Now(), time.Now())
 }
 
-func addBaseHandler(w http.ResponseWriter, r *http.Request) {
+func baseHandler(w http.ResponseWriter, r *http.Request) {
   fmt.Fprintf(w, "Hello, server running.")
 }
 
@@ -97,7 +97,7 @@ func removeHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
     ioutil.WriteFile(fp.Join(BASE_DIR, UPDATE_FILE), []byte(""), 0777)
 
-    http.HandleFunc("/", addBaseHandler)
+    http.HandleFunc("/", baseHandler)
     http.HandleFunc("/addFile", addFileHandler)
     http.HandleFunc("/addFolder", addFolderHandler)
     http.HandleFunc("/remove", removeHandler)
