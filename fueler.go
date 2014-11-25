@@ -10,6 +10,11 @@ import (
     fp "path/filepath"
 )
 
+const (
+  UPDATE_FILE = ".hotrod-update"
+  BASE_DIR = "/app/"
+)
+
 func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
   // after 200000 bytes of file parts stored in memory
   // the remainder are persisted to disk in temporary files
@@ -22,12 +27,7 @@ func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
   formData := r.MultipartForm
   relPath := formData.Value["path"][0]
 
-  baseDir := os.Getenv("APP_SRC_DIR")
-  if len(baseDir) == 0 {
-    baseDir = "/app/"
-  }
-
-  filepath := fp.Join(baseDir, relPath)
+  filepath := fp.Join(BASE_DIR, relPath)
 
   if add {
 
@@ -75,8 +75,7 @@ func handler(w http.ResponseWriter, r *http.Request, add, isFile bool) {
     }
   }
 
-  os.Chtimes(fp.Join(baseDir, ".hotrod-update"), time.Now(), time.Now())
-
+  os.Chtimes(fp.Join(BASE_DIR, UPDATE_FILE), time.Now(), time.Now())
 }
 
 func addBaseHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,13 +95,7 @@ func removeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
-    baseDir := os.Getenv("APP_SRC_DIR")
-    if len(baseDir) == 0 {
-      baseDir = "/app/"
-    }
-
-    ioutil.WriteFile(fp.Join(baseDir, ".hotrod-update"), []byte(""), 0777)
+    ioutil.WriteFile(fp.Join(BASE_DIR, UPDATE_FILE), []byte(""), 0777)
 
     http.HandleFunc("/", addBaseHandler)
     http.HandleFunc("/addFile", addFileHandler)
